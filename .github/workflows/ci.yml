@@ -36,7 +36,7 @@ jobs:
 
       - name: Lint Caddyfile (hadolint config is present; validate via docker run)
         run: |
-          docker run --rm -v "$PWD/Caddyfile:/etc/caddy/Caddyfile:ro" \
+          docker run --rm -e CADDY_DOMAIN -v "$PWD/Caddyfile:/etc/caddy/Caddyfile:ro" \
             caddy:2.8-alpine caddy validate --config /etc/caddy/Caddyfile \
             --adapter caddyfile
         env:
