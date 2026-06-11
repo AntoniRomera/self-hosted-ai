@@ -70,7 +70,7 @@ assert_not_contains() {
 
 # Dummy values so `docker compose config` resolves required ${VAR:?...} vars.
 export WEBUI_SECRET_KEY="dummy-secret-for-tests"
-export TS_AUTHKEY="tskey-auth-dummy-for-tests"
+export TS_AUTHKEY="dummy-authkey-for-tests"
 export CADDY_DOMAIN="ai.test.example"
 
 HAVE_DOCKER=0

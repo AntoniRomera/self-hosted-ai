@@ -73,7 +73,7 @@ Generate an auth key in the Tailscale admin console. For an unattended home
 server, a **reusable + ephemeral + tagged** key works well. Put it in `.env`:
 
 ```env
-TS_AUTHKEY="tskey-auth-xxxxxxxxxxxx"
+TS_AUTHKEY="REPLACE-WITH-YOUR-TAILSCALE-AUTHKEY"
 ```
 
 The key is read only from the environment — it is **never** committed (`.env` is

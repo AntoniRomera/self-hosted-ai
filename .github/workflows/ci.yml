@@ -59,7 +59,7 @@ jobs:
           docker compose --profile tls config -q
         env:
           WEBUI_SECRET_KEY: ci-dummy-secret
-          TS_AUTHKEY: tskey-auth-ci-dummy
+          TS_AUTHKEY: ci-dummy-authkey
           CADDY_DOMAIN: ai.example.com
 
       - name: Run compose smoke tests

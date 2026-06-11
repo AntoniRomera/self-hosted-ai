@@ -34,7 +34,7 @@ check_secret() {
   fi
 }
 
-check_secret "TS_AUTHKEY" "tskey-auth-REPLACE-ME"
+check_secret "TS_AUTHKEY" "REPLACE-WITH-YOUR-TAILSCALE-AUTHKEY"
 check_secret "WEBUI_SECRET_KEY" "change-me-generate-with-openssl-rand-hex-32"
 
 # --- Bring the stack up ------------------------------------------------------
