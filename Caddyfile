@@ -1,0 +1,39 @@
+# Caddy reverse proxy for the Self-Hosted AI Stack (Compose profile "tls").
+#
+# Provides automatic HTTPS (Let's Encrypt) for public internet exposure.
+# Only needed if you want to reach Open WebUI over a real domain WITHOUT
+# Tailscale. For tailnet-only access, leave the "tls" profile disabled and use
+# Tailscale Serve (tailscale/serve.json) instead.
+#
+# {$CADDY_DOMAIN} is substituted from the CADDY_DOMAIN environment variable.
+
+{$CADDY_DOMAIN} {
+	encode zstd gzip
+
+	# Forward everything to Open WebUI on the internal Docker network.
+	reverse_proxy open-webui:8080 {
+		# Preserve client info for Open WebUI logs / auth.
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Forwarded-Proto {scheme}
+
+		# Open WebUI uses WebSockets for streaming responses; Caddy proxies
+		# these transparently, but bump the flush interval for low latency.
+		flush_interval -1
+	}
+
+	# Sensible security headers for a public deployment.
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		# Remove the Server header from upstream responses.
+		-Server
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}

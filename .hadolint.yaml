@@ -1,0 +1,16 @@
+# Hadolint configuration.
+#
+# This project is image-based and ships no Dockerfile today, but this config is
+# kept so that any Dockerfile added later (e.g. a custom healthcheck image)
+# lints clean out of the box.
+failure-threshold: warning
+
+ignored:
+  # Pinning apt versions is impractical for example/utility images.
+  - DL3008
+  # Pinning pip versions likewise.
+  - DL3013
+
+trustedRegistries:
+  - docker.io
+  - ghcr.io

@@ -1,0 +1,23 @@
+---
+# yamllint configuration for the Self-Hosted AI Stack.
+# Relaxed line-length and forgiving comment rules so Compose files lint clean.
+
+extends: default
+
+rules:
+  line-length:
+    max: 120
+    level: warning
+  document-start:
+    present: true
+  comments:
+    min-spaces-from-content: 1
+  comments-indentation: disable
+  truthy:
+    allowed-values: ["true", "false"]
+    check-keys: false
+  braces:
+    max-spaces-inside: 1
+
+ignore: |
+  .github/

@@ -1,0 +1,22 @@
+---
+# Optional local-only override.
+#
+# Copy this file to `docker-compose.override.yml` to publish Open WebUI on the
+# Docker host's loopback interface, so you can reach it at
+# http://127.0.0.1:${WEBUI_PORT:-3000} without going through Tailscale.
+#
+#   cp docker-compose.override.yml.example docker-compose.override.yml
+#   docker compose up -d
+#
+# Binding to 127.0.0.1 keeps it off your LAN / the public internet. Change to
+# "0.0.0.0" only if you understand the exposure (and prefer Tailscale/Caddy).
+#
+# Compose automatically merges docker-compose.override.yml on top of
+# docker-compose.yml, so you do not need to pass -f.
+
+name: self-hosted-ai
+
+services:
+  open-webui:
+    ports:
+      - "127.0.0.1:${WEBUI_PORT:-3000}:8080"

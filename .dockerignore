@@ -1,0 +1,21 @@
+# Keep any future build context lean (no Dockerfile today, but ready if added).
+.git
+.gitignore
+.github
+.env
+.env.*
+!.env.example
+backups/
+data/
+volumes/
+*.tar.gz
+*.tgz
+docs/
+tests/
+README*.md
+CONTRIBUTING.md
+LICENSE
+.editorconfig
+.yamllint
+.hadolint.yaml
+.DS_Store

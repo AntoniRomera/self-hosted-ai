@@ -1,0 +1,153 @@
+---
+# Self-Hosted AI Stack
+#
+# Core services:
+#   - ollama       : local LLM model server (internal :11434)
+#   - open-webui   : chat UI, talks to Ollama (internal :8080)
+#   - tailscale    : mesh VPN, exposes Open WebUI on your tailnet over HTTPS
+#
+# Optional (profile "tls"):
+#   - caddy        : public reverse proxy + automatic TLS for internet exposure
+#
+# By default NO host ports are published. Open WebUI is reachable only through
+# the Tailscale container's tailnet IP / MagicDNS name. To get local-only
+# access on the Docker host, copy docker-compose.override.yml.example to
+# docker-compose.override.yml (publishes 127.0.0.1:${WEBUI_PORT}:8080).
+#
+# Pinned image tags are used for reproducibility. Override them in .env.
+
+name: self-hosted-ai
+
+services:
+  ollama:
+    image: "${OLLAMA_IMAGE:-ollama/ollama:0.5.7}"
+    container_name: ollama
+    restart: unless-stopped
+    environment:
+      # How long a model stays resident in memory after the last request.
+      OLLAMA_KEEP_ALIVE: "${OLLAMA_KEEP_ALIVE:-5m}"
+    volumes:
+      - "ollama-data:/root/.ollama"
+    networks:
+      - ai-net
+    healthcheck:
+      # Ollama serves its version endpoint once the API is ready.
+      test: ["CMD-SHELL", "ollama --version >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    # ----------------------------------------------------------------------
+    # NVIDIA GPU enablement (uncomment to use a GPU on the host).
+    # Requires the NVIDIA Container Toolkit on the host.
+    # See docs/CONFIGURATION.md -> "GPU acceleration".
+    # ----------------------------------------------------------------------
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: ["gpu"]
+    # Alternative shorthand (Docker Compose v2.3+):
+    # gpus: all
+
+  open-webui:
+    image: "${OPENWEBUI_IMAGE:-ghcr.io/open-webui/open-webui:v0.5.20}"
+    container_name: open-webui
+    restart: unless-stopped
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      OLLAMA_BASE_URL: "http://ollama:11434"
+      # Signs session tokens. Generate a strong value; never commit it.
+      WEBUI_SECRET_KEY: "${WEBUI_SECRET_KEY:?WEBUI_SECRET_KEY is required - set it in .env}"
+      # Set to "false" to disable login (single-user / trusted tailnet only).
+      WEBUI_AUTH: "${WEBUI_AUTH:-true}"
+    volumes:
+      - "openwebui-data:/app/backend/data"
+    networks:
+      - ai-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    # No ports published by default. See docker-compose.override.yml.example
+    # for local-only host access:
+    # ports:
+    #   - "127.0.0.1:${WEBUI_PORT:-3000}:8080"
+
+  tailscale:
+    image: "${TAILSCALE_IMAGE:-tailscale/tailscale:v1.80.0}"
+    container_name: tailscale
+    restart: unless-stopped
+    depends_on:
+      open-webui:
+        condition: service_healthy
+    environment:
+      # Auth key from https://login.tailscale.com/admin/settings/keys
+      # Required. Provide via .env (never hardcode). Use a tagged, reusable,
+      # ephemeral key for unattended hosts.
+      TS_AUTHKEY: "${TS_AUTHKEY:?TS_AUTHKEY is required - set it in .env}"
+      # Name this node shows up as on your tailnet (MagicDNS).
+      TS_HOSTNAME: "${TS_HOSTNAME:-self-hosted-ai}"
+      # Userspace networking: no NET_ADMIN/TUN device needed.
+      TS_USERSPACE: "true"
+      # Persist node state across restarts.
+      TS_STATE_DIR: "/var/lib/tailscale"
+      # Expose Open WebUI on the tailnet over HTTPS (Tailscale Serve).
+      TS_SERVE_CONFIG: "/config/serve.json"
+      TS_EXTRA_ARGS: "${TS_EXTRA_ARGS:-}"
+    volumes:
+      - "tailscale-state:/var/lib/tailscale"
+      - "./tailscale/serve.json:/config/serve.json:ro"
+    networks:
+      - ai-net
+    healthcheck:
+      test: ["CMD-SHELL", "tailscale status >/dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  caddy:
+    image: "${CADDY_IMAGE:-caddy:2.8-alpine}"
+    container_name: caddy
+    restart: unless-stopped
+    profiles: ["tls"]
+    depends_on:
+      open-webui:
+        condition: service_healthy
+    environment:
+      # Public domain Caddy issues a certificate for and serves on.
+      CADDY_DOMAIN: "${CADDY_DOMAIN:?CADDY_DOMAIN is required when the tls profile is enabled}"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - "./Caddyfile:/etc/caddy/Caddyfile:ro"
+      - "caddy-data:/data"
+      - "caddy-config:/config"
+    networks:
+      - ai-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:80 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+networks:
+  ai-net:
+    driver: bridge
+
+volumes:
+  ollama-data:
+  openwebui-data:
+  tailscale-state:
+  caddy-data:
+  caddy-config:

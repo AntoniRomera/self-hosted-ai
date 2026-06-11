@@ -1,0 +1,25 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+
+# Local Compose override
+docker-compose.override.yml
+
+# Backups / archives
+backups/
+*.tar.gz
+*.tgz
+
+# Local data / state (if anything ever ends up bind-mounted)
+data/
+volumes/
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.idea/
+.vscode/

@@ -1,0 +1,66 @@
+name: CI
+
+# Lint the YAML/Dockerfiles/shell, validate the Compose config, and run the
+# compose smoke tests. No containers are started, so this is fast and free.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint (yaml + shell + compose)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Lint YAML
+        uses: ibiqlik/action-yamllint@v3
+        with:
+          config_file: .yamllint
+          strict: false
+
+      - name: Lint shell scripts
+        uses: ludeeus/action-shellcheck@master
+        with:
+          scandir: "."
+          additional_files: "Makefile"
+        env:
+          SHELLCHECK_OPTS: -e SC1090 -e SC1091
+
+      - name: Lint Caddyfile (hadolint config is present; validate via docker run)
+        run: |
+          docker run --rm -v "$PWD/Caddyfile:/etc/caddy/Caddyfile:ro" \
+            caddy:2.8-alpine caddy validate --config /etc/caddy/Caddyfile \
+            --adapter caddyfile
+        env:
+          CADDY_DOMAIN: ai.example.com
+
+  test:
+    name: Compose validate + smoke tests
+    runs-on: ubuntu-latest
+    # Docker Compose v2 is preinstalled on GitHub-hosted ubuntu runners.
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show Docker Compose version
+        run: docker compose version
+
+      - name: Validate Compose config (default + tls profiles)
+        run: |
+          docker compose config -q
+          docker compose --profile tls config -q
+        env:
+          WEBUI_SECRET_KEY: ci-dummy-secret
+          TS_AUTHKEY: tskey-auth-ci-dummy
+          CADDY_DOMAIN: ai.example.com
+
+      - name: Run compose smoke tests
+        run: ./tests/smoke-compose.sh
