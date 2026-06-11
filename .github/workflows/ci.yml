@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Lint YAML
         uses: ibiqlik/action-yamllint@v3
@@ -48,7 +48,7 @@ jobs:
     # Docker Compose v2 is preinstalled on GitHub-hosted ubuntu runners.
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Show Docker Compose version
         run: docker compose version
