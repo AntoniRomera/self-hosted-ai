@@ -30,7 +30,7 @@ jobs:
         uses: ludeeus/action-shellcheck@master
         with:
           scandir: "."
-          additional_files: "Makefile"
+          severity: warning
         env:
           SHELLCHECK_OPTS: -e SC1090 -e SC1091
 

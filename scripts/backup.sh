@@ -68,4 +68,5 @@ if [ "${INCLUDE_MODELS}" -eq 1 ]; then
 fi
 
 log_info "Done. Backups stored in ${BACKUP_DIR}/"
+# shellcheck disable=SC2012  # listing our own timestamped backup files; ls -t is fine here
 ls -1t "${BACKUP_DIR}" | head -n 5 || true

@@ -222,8 +222,8 @@ fi
 
 # ---------------------------------------------------------------------------
 echo
+if [ "${FAIL}" -eq 0 ]; then fail_str="$(green 0)"; else fail_str="$(red "${FAIL}")"; fi
 printf 'Results: %s passed, %s failed, %s skipped\n' \
-  "$(green "${PASS}")" "$([ "${FAIL}" -eq 0 ] && green 0 || red "${FAIL}")" \
-  "$(yellow "${SKIP}")"
+  "$(green "${PASS}")" "${fail_str}" "$(yellow "${SKIP}")"
 
 [ "${FAIL}" -eq 0 ] || exit 1
